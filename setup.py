@@ -7,5 +7,5 @@ setup(name='keras_rl',
       author_email='rohitgopalan1990@gmail.com',
       license='DST',
       packages=find_packages(),
-      install_requires=['numpy', 'torch', 'gym', 'scikit-learn', 'joblib'],
+      install_requires=['numpy', 'tensorflow', 'keras', 'gym', 'scikit-learn', 'joblib'],
       zip_safe=False)
