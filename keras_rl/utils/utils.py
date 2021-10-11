@@ -8,7 +8,7 @@ from keras_rl.policy.upper_confidence_bound import UpperConfidenceBoundPolicy
 from .types import NetworkOptimizer, PolicyType
 from ..policy.policy import Policy
 
-def get_torch_optimizer(optimizer_type, optimizer_args):
+def get_keras_optimizer(optimizer_type, optimizer_args):
     if optimizer_type == NetworkOptimizer.ADAM:
         learning_rate = optimizer_args['learning_rate'] if 'learning_rate' in optimizer_args else 0.001
         beta_m = optimizer_args['beta_m'] if 'beta_m' in optimizer_args else 0.9
