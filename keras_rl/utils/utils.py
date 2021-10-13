@@ -8,6 +8,7 @@ from keras_rl.policy.upper_confidence_bound import UpperConfidenceBoundPolicy
 from .types import NetworkOptimizer, PolicyType
 from ..policy.policy import Policy
 
+
 def get_keras_optimizer(optimizer_type, optimizer_args):
     if optimizer_type == NetworkOptimizer.ADAM:
         learning_rate = optimizer_args['learning_rate'] if 'learning_rate' in optimizer_args else 0.001
@@ -31,7 +32,8 @@ def get_keras_optimizer(optimizer_type, optimizer_args):
             'initial_accumulator_value'] if 'initial_accumulator_value' in optimizer_args else 0
         epsilon = optimizer_args['epsilon'] if 'epsilon' in optimizer_args else 1e-10
 
-        return optimizers.Adagrad(learning_rate=learning_rate, initial_accumulator_value=initial_accumulator_value, epsilon=epsilon)
+        return optimizers.Adagrad(learning_rate=learning_rate, initial_accumulator_value=initial_accumulator_value,
+                                  epsilon=epsilon)
 
     elif optimizer_type == NetworkOptimizer.RMSPROP:
         learning_rate = optimizer_args['learning_rate'] if 'learning_rate' in optimizer_args else 0.01
@@ -40,7 +42,8 @@ def get_keras_optimizer(optimizer_type, optimizer_args):
         momentum = optimizer_args['momentum'] if 'momentum' in optimizer_args else 0
         centered = optimizer_args['centered'] if 'centered' in optimizer_args else False
 
-        return optimizers.RMSprop(learning_rate=learning_rate, rho=alpha, momentum=momentum, epsilon=epsilon, centered=centered),
+        return optimizers.RMSprop(learning_rate=learning_rate, rho=alpha, momentum=momentum, epsilon=epsilon,
+                                  centered=centered),
 
     elif optimizer_type == NetworkOptimizer.SGD:
         learning_rate = optimizer_args['learning_rate'] if 'learning_rate' in optimizer_args else 0.01
@@ -69,6 +72,7 @@ def choose_policy(num_actions, policy_type, policy_args):
         return UpperConfidenceBoundPolicy(num_actions, confidence_factor, move_matrix)
     else:
         return Policy(num_actions, move_matrix)
+
 
 def get_hidden_layer_sizes(fc_dims):
     if type(fc_dims) == int:
