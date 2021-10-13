@@ -4,8 +4,8 @@ from gym.spaces import Discrete
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.tree import DecisionTreeClassifier
 
-from torch_rl.replay.replay import ReplayBuffer
-from torch_rl.utils.types import LearningType
+from keras_rl.replay.replay import ReplayBuffer
+from keras_rl.utils.types import LearningType
 
 
 class ActionBlocker:
