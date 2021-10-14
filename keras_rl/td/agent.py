@@ -31,15 +31,15 @@ class TDAgent:
         if self.goal is not None:
             if not type(self.goal) == np.ndarray:
                 self.goal = np.array([self.goal]).astype(np.float32)
-            self.q_eval = TDNetwork(tuple(np.add(self.input_dims, self.goal.shape)), self.n_actions, network_args,
-                                    optimizer_type, optimizer_args, use_mse)
-            self.q_next = TDNetwork(tuple(np.add(self.input_dims, self.goal.shape)), self.n_actions, network_args,
-                                    optimizer_type, optimizer_args, use_mse)
+            self.q_eval = TDNetwork(tuple(np.add(self.input_dims, self.goal.shape)), self.n_actions,
+                                    network_args['fc_dims'], optimizer_type, optimizer_args, use_mse)
+            self.q_next = TDNetwork(tuple(np.add(self.input_dims, self.goal.shape)), self.n_actions,
+                                    network_args['fc_dims'], optimizer_type, optimizer_args, use_mse)
         else:
-            self.q_eval = TDNetwork(self.input_dims, self.n_actions, network_args, optimizer_type, optimizer_args,
-                                    use_mse)
-            self.q_next = TDNetwork(self.input_dims, self.n_actions, network_args, optimizer_type, optimizer_args,
-                                    use_mse)
+            self.q_eval = TDNetwork(self.input_dims, self.n_actions, network_args['fc_dims'],
+                                    optimizer_type, optimizer_args, use_mse)
+            self.q_next = TDNetwork(self.input_dims, self.n_actions, network_args['fc_dims'],
+                                    optimizer_type, optimizer_args, use_mse)
 
         if assign_priority:
             self.memory = PriorityReplayBuffer(mem_size, input_dims, goal=self.goal)
@@ -65,7 +65,7 @@ class TDAgent:
             self.load_model(model_name)
 
     def choose_action(self, env, learning_type, observation, train=True):
-        self.initial_action = self.choose_policy_action(observation, train)
+        self.initial_action = self.choose_policy_action(observation, train=train)
         if self.enable_action_blocking:
             self.action_blocker.assign_learning_type(learning_type)
             actual_action = self.action_blocker.find_safe_action(env, observation, self.initial_action)
@@ -91,7 +91,7 @@ class TDAgent:
             return network.forward(inputs)
 
     def choose_policy_action(self, observation, goal=None, train=True):
-        return self.policy.get_action(train, values=self.get_q_values(observation, goal))
+        return self.policy.get_action(train, values=self.get_q_values(self.q_eval, observation, goal).squeeze())
 
     def get_weighted_sum(self, q_values_arr, next_states):
         policy = self.policy.get_probs(values=q_values_arr, next_states=next_states)
@@ -108,10 +108,10 @@ class TDAgent:
             if done:
                 return reward
             else:
-                Q_ = self.get_q_values(self.q_next, state_, self.goal)
+                Q_ = self.get_q_values(self.q_next, state_, self.goal).squeeze()
 
                 if self.is_double:
-                    Q_eval = self.get_q_values(self.q_eval, state_, self.goal)
+                    Q_eval = self.get_q_values(self.q_eval, state_, self.goal).squeeze()
                     if self.algorithm_type == TDAlgorithmType.SARSA:
                         next_q_value = Q_[self.policy.get_action(True, values=Q_eval)]
                     elif self.algorithm_type == TDAlgorithmType.Q:
@@ -136,7 +136,7 @@ class TDAgent:
                 return reward + (self.gamma * next_q_value)
 
     def determine_error(self, state, action, reward, state_, done):
-        Q = self.get_q_values(self.q_eval, state, self.goal)
+        Q = self.get_q_values(self.q_eval, state, self.goal).squeeze()
         return self.get_target_value(action, reward, state_, done) - Q[action]
 
     def replace_target_network(self):
@@ -177,7 +177,7 @@ class TDAgent:
                 # 2. Rewrite the chosen action value with the computed target
                 target_f[0][action] = target
 
-                self.q_next.fit(inputs, target_f)
+                self.q_next.fit(np.array([inputs]), target_f)
 
             self.learn_step_counter += 1
 

@@ -73,7 +73,7 @@ class DuelingTDAgent:
             self.load_model(model_name)
 
     def choose_action(self, env, learning_type, observation, train=True):
-        self.initial_action = self.choose_policy_action(observation, train)
+        self.initial_action = self.choose_policy_action(observation, train=train)
         if self.enable_action_blocking:
             self.action_blocker.assign_learning_type(learning_type)
             actual_action = self.action_blocker.find_safe_action(env, observation, self.initial_action)
@@ -85,19 +85,7 @@ class DuelingTDAgent:
             return self.initial_action
 
     def choose_policy_action(self, observation, goal=None, train=True):
-        with tf.device(self.q_eval.device):
-            if goal is None:
-                goal = self.goal
-
-            if not type(observation) == np.ndarray:
-                observation = np.array([observation]).astype(np.float32)
-
-            if goal is not None:
-                inputs = np.concatenate((observation, goal), axis=None)
-            else:
-                inputs = observation
-            _, advantage = self.q_eval.forward(inputs)
-            return self.policy.get_action(train, values=advantage)
+        return self.policy.get_action(train, values=self.get_q_values(self.q_eval, observation, goal, True))
 
     def get_weighted_sum(self, q_values_arr, next_states):
         policy = self.policy.get_probs(values=q_values_arr, next_states=next_states)
@@ -128,9 +116,9 @@ class DuelingTDAgent:
             if done:
                 return reward
             else:
-                q_next = self.get_q_values(self.q_next, state_, self.goal, advantage_only)
+                q_next = self.get_q_values(self.q_next, state_, self.goal, advantage_only).squeeze()
                 if self.is_double:
-                    q_eval = self.get_q_values(self.q_eval, state_, self.goal, advantage_only)
+                    q_eval = self.get_q_values(self.q_eval, state_, self.goal, advantage_only).squeeze()
                     if self.algorithm_type == TDAlgorithmType.SARSA:
                         next_q_value = q_next[self.policy.get_action(True, values=q_eval)]
                     elif self.algorithm_type == TDAlgorithmType.Q:
@@ -155,7 +143,8 @@ class DuelingTDAgent:
                 return reward + (self.gamma * next_q_value)
 
     def determine_error(self, state, action, reward, state_, done):
-        return self.get_target_value(action, reward, state_, done, False) - self.get_q_values(self.q_eval, state, self.goal, False)
+        return self.get_target_value(action, reward, state_, done, False) \
+               - self.get_q_values(self.q_eval, state, self.goal, False).squeeze()
 
     def replace_target_network(self):
         if self.learn_step_counter % self.replace_target_cnt == 0:
@@ -195,7 +184,7 @@ class DuelingTDAgent:
                 # 2. Rewrite the chosen action value with the computed target
                 target_f[0][action] = target
 
-                self.q_next.fit(inputs, target_f)
+                self.q_next.fit(np.array([inputs]), target_f)
 
         self.learn_step_counter += 1
 

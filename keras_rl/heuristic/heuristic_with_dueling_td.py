@@ -36,10 +36,10 @@ class HeuristicWithDuelingTD(HeuristicWithML, DuelingTDAgent):
             if done:
                 return reward
             else:
-                Q_ = self.get_q_values(self.q_next, new_state, self.goal)
+                Q_ = self.get_q_values(self.q_next, new_state, self.goal).squeeze()
 
                 if self.is_double:
-                    Q_eval = self.get_q_values(self.q_eval, new_state, self.goal)
+                    Q_eval = self.get_q_values(self.q_eval, new_state, self.goal).squeeze()
                     if self.algorithm_type == TDAlgorithmType.SARSA:
                         next_q_value = Q_[self.determine_next_action(env, learning_type, new_state, Q_eval)]
                     elif self.algorithm_type == TDAlgorithmType.Q:
@@ -101,7 +101,7 @@ class HeuristicWithDuelingTD(HeuristicWithML, DuelingTDAgent):
                     # 2. Rewrite the chosen action value with the computed target
                     target_f[0][action] = target
 
-                    self.q_next.fit(inputs, target_f)
+                    self.q_next.fit(np.array([inputs]), target_f)
 
             self.learn_step_counter += 1
 

@@ -24,7 +24,7 @@ class PolicyNetwork(keras.Model):
         gpu_device_name = tf.test.gpu_device_name()
         self.device = gpu_device_name if len(gpu_device_name) > 0 else '/device:cpu:0'
 
-    def call(self, state, training=None, mask=None):
+    def forward(self, state):
         if len(state.shape) == self.input_dim_len:
             state = state.flatten()
             x = self.fc1(state)

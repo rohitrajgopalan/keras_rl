@@ -30,13 +30,12 @@ class TDNetwork:
 
     def forward(self, state):
         if len(state.shape) == self.input_dim_len:
-            state = state.flatten()
-            return self.model.predict(state)
+            states = np.array([state])
         else:
-            states = np.zeros((state.shape[0], self.input_dim_len))
+            states = np.zeros((state.shape[0], self.total_fc_dims))
             for i, s in enumerate(state):
                 states[i] = s.flatten()
-            return self.model.predict(states)
+        return self.model.predict(states)
 
     def fit(self, inputs, outputs):
         self.model.fit(inputs, outputs, epochs=1, verbose=0)

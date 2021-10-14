@@ -51,7 +51,6 @@ class DDPGAgent:
             self.target_critic = ValueNetwork(input_dims, action_space.shape, network_args, critic_optimizer_type,
                                               critic_optimizer_args)
 
-        self.update_network_parameters(soft_tau=1)
 
         if assign_priority:
             self.memory = PriorityReplayBuffer(max_size, input_dims, action_space.shape[0], self.goal)
@@ -97,7 +96,7 @@ class DDPGAgent:
             else:
                 inputs = state
 
-        actions = self.actor(inputs).numpy()
+        actions = self.actor.forward(inputs).numpy()
         action = actions[0]
         if train:
             return self.noise.get_action(action, t)
@@ -114,9 +113,9 @@ class DDPGAgent:
                 inputs = state
             action = tf.convert_to_tensor(action, dtype=tf.float32)
             if use_target:
-                values = self.target_critic.forward(inputs, action).numpy()
+                values = self.target_critic.forward(inputs, action).numpy()[0]
             else:
-                values = self.critic.forward(inputs, action).numpy()
+                values = self.critic.forward(inputs, action).numpy()[0]
             return values
 
     def store_transition(self, state, action, reward, state_, done, t=0):
@@ -159,9 +158,9 @@ class DDPGAgent:
                 inputs_ = states_
 
             with tf.GradientTape() as tape:
-                target_actions = self.target_actor(inputs_)
-                critic_value_ = tf.squeeze(self.target_critic.forward(inputs_, target_actions), 1)
-                critic_value = tf.squeeze(self.critic.forward(inputs, actions), 1)
+                target_actions = self.target_actor.forward(inputs_)
+                critic_value_ = self.target_critic.forward(inputs_, target_actions)
+                critic_value = self.critic.forward(inputs, actions)
                 target = rewards + self.gamma * critic_value_ * (1 - dones)
                 if self.use_mse:
                     critic_loss = keras.losses.MSE(target, critic_value)
@@ -172,7 +171,7 @@ class DDPGAgent:
             self.critic.optimizer.apply_gradients(zip(critic_network_gradient, self.critic.trainable_variables))
 
             with tf.GradientTape() as tape:
-                new_policy_actions = self.actor(inputs)
+                new_policy_actions = self.actor.forward(inputs)
                 actor_loss = -self.critic.forward(inputs, new_policy_actions)
                 actor_loss = tf.math.reduce_mean(actor_loss)
 

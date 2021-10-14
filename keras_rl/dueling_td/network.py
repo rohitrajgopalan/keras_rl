@@ -1,3 +1,4 @@
+import numpy as np
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras.layers import Dense
@@ -28,7 +29,13 @@ class DuelingTDNetwork(keras.Model):
         self.device = gpu_device_name if len(gpu_device_name) > 0 else '/device:cpu:0'
 
     def call(self, state, training=None, mask=None):
-        x = self.fc1(state)
+        if len(state.shape) == self.input_dim_len:
+            states = np.array([state])
+        else:
+            states = np.zeros((state.shape[0], self.total_fc_input_dims))
+            for i, s in enumerate(state):
+                states[i] = s.flatten()
+        x = self.fc1(states)
         x = self.fc2(x)
         V = self.V(x)
         A = self.A(x)
@@ -38,7 +45,13 @@ class DuelingTDNetwork(keras.Model):
         return Q
 
     def advantage(self, state):
-        x = self.fc1(state)
+        if len(state.shape) == self.input_dim_len:
+            states = np.array([state])
+        else:
+            states = np.zeros((state.shape[0], self.input_dim_len))
+            for i, s in enumerate(state):
+                states[i] = s.flatten()
+        x = self.fc1(states)
         x = self.fc2(x)
         A = self.A(x)
 
